@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="670.0" prefWidth="932.0" style="-fx-background-color: #f5efe6;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Store.DashboardController">
+   <children>
+      <HBox alignment="CENTER" prefHeight="94.0" prefWidth="932.0" spacing="15" style="-fx-background-color: #0B032F; -fx-padding: 15px;">
+         <children>
+            <HBox prefHeight="64.0" prefWidth="869.0">
+               <children>
+                  <Label prefHeight="30.0" prefWidth="302.0" text="SKNN SHOP ADMIN" textFill="WHITE">
+                     <HBox.margin>
+                        <Insets bottom="10.0" left="10.0" right="5.0" top="10.0" />
+                     </HBox.margin>
+                     <font>
+                        <Font name="System Bold" size="29.0" />
+                     </font>
+                  </Label>
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" prefHeight="64.0" prefWidth="374.0" spacing="20" style="-fx-padding: 0 0 0 20;">
+               <children>
+                  <Button style="-fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold;" text="Logout" />
+                  <Button style="-fx-background-color: white; -fx-text-fill: black; -fx-background-radius: 15; -fx-padding: 8px 15px;" text="\@name" />
+               </children>
+            </HBox>
+         </children>
+      </HBox>
+      <TabPane layoutX="4.0" layoutY="96.0" prefHeight="534.0" prefWidth="926.0" tabClosingPolicy="UNAVAILABLE">
+        <tabs>
+            <Tab fx:id="transactionTab" text="Orders">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <TableView fx:id="purchaseTableView" layoutX="14.0" layoutY="11.0" prefHeight="485.0" prefWidth="745.0" tableMenuButtonVisible="true">
+                          <columns>
+                            <TableColumn fx:id="purchaseIDCol" prefWidth="70.0" text="Order ID" />
+                            <TableColumn fx:id="purchaseNameCol" prefWidth="106.0" text="Customer ID" />
+                              <TableColumn fx:id="purchaseDateCol" prefWidth="146.4000244140625" text="Date" />
+                              <TableColumn fx:id="purchasePriceCol" prefWidth="99.199951171875" text="Price" />
+                              <TableColumn prefWidth="113.60006713867188" text="Status" />
+                              <TableColumn prefWidth="102.4000244140625" text="Full Name" />
+                              <TableColumn prefWidth="89.60003662109375" text="Address" />
+                          </columns>
+                        </TableView>
+                        <Group layoutX="790.0" layoutY="192.0">
+                           <children>
+                              <Button mnemonicParsing="false" prefHeight="28.0" prefWidth="99.0" text="Update Status" />
+                              <Button layoutY="50.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="99.0" style="-fx-background-color: #ff4444;" text="Remove" />
+                           </children>
+                        </Group>
+                     </children>
+                  </AnchorPane>
+              </content>
+            </Tab>
+          <Tab fx:id="customerTab" text="Clients">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <TableView fx:id="customerTableView" layoutX="14.0" layoutY="13.0" prefHeight="485.0" prefWidth="650.0" tableMenuButtonVisible="true">
+                          <columns>
+                            <TableColumn fx:id="customerIdCol" prefWidth="59.0" text="ID" />
+                            <TableColumn fx:id="customerNameCol" prefWidth="91.0" text="Full Name" />
+                              <TableColumn fx:id="customerAddCol" prefWidth="154.39996337890625" text="Address" />
+                              <TableColumn fx:id="customerUserNameCol" prefWidth="140.0" text="Email" />
+                              <TableColumn fx:id="customerPassCol" prefWidth="96.80001831054688" text="Password" />
+                              <TableColumn prefWidth="132.0" text="Phone" />
+                          </columns>
+                        </TableView>
+                        <Group layoutX="802.0" layoutY="136.0" />
+                        <Group layoutX="685.0" layoutY="71.0">
+                           <children>
+                              <Button layoutY="1.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="99.0" text="Update" />
+                              <Button layoutX="61.0" layoutY="343.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="99.0" text="Add " />
+                              <Button layoutX="128.0" mnemonicParsing="false" prefHeight="28.0" prefWidth="99.0" style="-fx-background-color: #ff4444;" text="Remove" />
+                              <Label layoutX="49.0" layoutY="62.0" text="New User Form">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font>
+                              </Label>
+                              <Label layoutX="10.0" layoutY="113.0" text="Full name" />
+                              <Label layoutX="10.0" layoutY="153.0" text="Address" />
+                              <Label layoutX="11.0" layoutY="193.0" text="Email" />
+                              <Label layoutX="11.0" layoutY="232.0" text="Phone" />
+                              <Label layoutX="10.0" layoutY="273.0" text="Password" />
+                              <TextField layoutX="76.0" layoutY="110.0" prefHeight="26.0" prefWidth="128.0" />
+                              <TextField layoutX="77.0" layoutY="149.0" prefHeight="26.0" prefWidth="128.0" />
+                              <TextField layoutX="77.0" layoutY="188.0" prefHeight="26.0" prefWidth="128.0" />
+                              <TextField layoutX="78.0" layoutY="227.0" prefHeight="26.0" prefWidth="127.0" />
+                              <TextField layoutX="78.0" layoutY="266.0" prefHeight="26.0" prefWidth="127.0" />
+                              <TextField layoutX="116.0" layoutY="304.0" prefHeight="26.0" prefWidth="89.0" />
+                              <Label layoutX="11.0" layoutY="308.0" text="Confirm Password" />
+                           </children>
+                        </Group>
+                     </children>
+                  </AnchorPane>
+            </content>
+          </Tab>
+          <Tab fx:id="staffTab" closable="false" text="Staffs">
+            <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="270.0" prefWidth="438.0">
+                     <children>
+                        <TableView fx:id="staffTableView" cache="true" layoutX="130.0" layoutY="17.0" prefHeight="471.0" prefWidth="430.0" tableMenuButtonVisible="true">
+                          <columns>
+                            <TableColumn fx:id="staffIdCol" prefWidth="75.0" text="ID" />
+                            <TableColumn fx:id="staffUserNameCol" prefWidth="162.0" text="Username" />
+                              <TableColumn fx:id="staffPassCol" prefWidth="174.0" text="Password" />
+                          </columns>
+                        </TableView>
+                        <Group layoutX="641.0" layoutY="107.0">
+                           <children>
+                              <Button layoutX="71.0" layoutY="209.0" mnemonicParsing="false" onAction="#handleStaffAddButton" prefHeight="28.0" prefWidth="99.0" text="Add " />
+                              <Button layoutX="112.0" mnemonicParsing="false" onAction="#handleDeleteButton" prefHeight="28.0" prefWidth="99.0" style="-fx-background-color: #ff4444;" text="Remove" />
+                              <Button layoutY="1.0" mnemonicParsing="false" onAction="#handleStaffUpdateButton" prefHeight="26.0" prefWidth="99.0" text="Update" />
+                              <TextField fx:id="addUserText" layoutX="4.0" layoutY="128.0" prefHeight="25.0" prefWidth="215.0" promptText="Username" />
+                              <TextField fx:id="addPassText" layoutX="4.0" layoutY="166.0" prefHeight="25.0" prefWidth="214.0" promptText="Password" />
+                              <Label layoutX="43.0" layoutY="60.0" text="New Staff Form">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </Group>
+                     </children>
+                  </AnchorPane>
+            </content>
+          </Tab>
+            <Tab fx:id="productsTab" closable="false" text="Products">
+               <content>
+                  <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="270.0" prefWidth="438.0">
+                     <children>
+                        <TableView fx:id="productTableView" layoutX="14.0" layoutY="10.0" prefHeight="495.0" prefWidth="642.0" tableMenuButtonVisible="true">
+                           <columns>
+                              <TableColumn fx:id="productIdCol" prefWidth="55.0" text="ID" />
+                              <TableColumn fx:id="productCodeCol" prefWidth="159.1999740600586" text="Description" />
+                              <TableColumn fx:id="productNameCol" prefWidth="128.800048828125" text="Name" />
+                              <TableColumn fx:id="productSizeCol" prefWidth="82.39996337890625" text="Stock" />
+                              <TableColumn fx:id="productPriceCol" prefWidth="100.00009155273438" text="Price" />
+                              <TableColumn prefWidth="100.0" text="Image" />
+                           </columns>
+                        </TableView>
+                        <Group layoutX="677.0" layoutY="77.0">
+                           <children>
+                              <Button layoutX="81.0" layoutY="310.0" mnemonicParsing="false" onAction="#handleProductAddButton" prefHeight="28.0" prefWidth="99.0" text="Add " />
+                              <Button layoutX="131.0" layoutY="1.0" mnemonicParsing="false" onAction="#handleProductDelButton" prefHeight="28.0" prefWidth="99.0" style="-fx-background-color: #ff4444;" text="Remove" />
+                              <Button mnemonicParsing="false" onAction="#handleProductUpdateButton" prefHeight="28.0" prefWidth="99.0" text="Update" />
+                              <TextField fx:id="productCode" layoutX="105.0" layoutY="150.0" prefHeight="26.0" prefWidth="130.0" />
+                              <TextField fx:id="productName" layoutX="105.0" layoutY="115.0" prefHeight="26.0" prefWidth="130.0" promptText="Name" />
+                              <TextField fx:id="productSize" layoutX="105.0" layoutY="187.0" prefHeight="26.0" prefWidth="129.0" />
+                              <TextField fx:id="productPrice" layoutX="104.0" layoutY="224.0" prefHeight="26.0" prefWidth="131.0" />
+                              <Label layoutX="19.0" layoutY="119.0" text="Product name" />
+                              <Label layoutX="19.0" layoutY="154.0" text="Dicription" />
+                              <Label layoutX="19.0" layoutY="191.0" text="Stock" />
+                              <Label layoutX="19.0" layoutY="229.0" text="Price" />
+                              <Label layoutX="37.0" layoutY="60.0" prefHeight="34.0" prefWidth="174.0" text="New Product From">
+                                 <font>
+                                    <Font size="20.0" />
+                                 </font>
+                              </Label>
+                              <Label layoutX="21.0" layoutY="266.0" prefHeight="17.0" prefWidth="39.0" text="Image" />
+                              <Button layoutX="105.0" layoutY="262.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="131.0" text="Import image" />
+                           </children>
+                        </Group>
+                     </children>
+                  </AnchorPane>
+               </content>
+            </Tab>
+            <Tab text="Search">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <TextField layoutX="264.0" layoutY="43.0" prefHeight="26.0" prefWidth="362.0" />
+                     </children>
+                  </AnchorPane>
+              </content>
+            </Tab>
+        </tabs>
+      </TabPane>
+      <HBox alignment="CENTER" layoutY="632.0" prefHeight="38.0" prefWidth="932.0" spacing="20" style="-fx-background-color: #0B032F; -fx-padding: 10px;">
+         <children>
+            <Label style="-fx-text-fill: white;" text="Contact Us: info@skincareshop.com" />
+            <HBox spacing="10" />
+         </children>
+      </HBox>
+  
+   </children>
+</AnchorPane>
