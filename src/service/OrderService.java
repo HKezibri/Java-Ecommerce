@@ -10,7 +10,7 @@ import util.OrderStatus;
 
 public class OrderService {
 
-    public void createOrder(Order order) throws SQLException {
+    /*public void createOrder(Order order) throws SQLException {
         String query = "INSERT INTO e_Orders (client_id, totalPrice, status) VALUES (?, ?, ?)";
 
         try (Connection conn = DBConnect.getConnection();
@@ -36,6 +36,98 @@ public class OrderService {
             throw new SQLException("Error creating order: " + e.getMessage(), e);
         }
     }
+	public void createOrder(Order order) throws SQLException {
+	    String query = "INSERT INTO e_Orders (client_id, totalPrice, status) VALUES (?, ?, ?)";
+
+	    try (Connection conn = DBConnect.getConnection();
+	         PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+
+	        // Use client_id from the Order object
+	        stmt.setInt(1, order.getClientId()); 
+	        stmt.setDouble(2, order.getTotalAmount());
+	        stmt.setString(3, order.getStatus().name());
+
+	        int rowsAffected = stmt.executeUpdate();
+	        if (rowsAffected == 0) {
+	            throw new SQLException("Failed to create order, no rows affected.");
+	        }
+
+	        ResultSet generatedKeys = stmt.getGeneratedKeys();
+	        if (generatedKeys.next()) {
+	            int orderId = generatedKeys.getInt(1);
+	            order.setOrderId(orderId);
+	            System.out.println("Order created with order_id: " + orderId);
+	            addOrderItems(order.getItems(), orderId, conn);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        throw new SQLException("Error creating order: " + e.getMessage(), e);
+	    }
+	}*/
+	public void createOrder(Order order) throws SQLException {
+	    // Validate order and items
+	    if (order.getItems() == null || order.getItems().isEmpty()) {
+	        throw new IllegalArgumentException("Order must have at least one item.");
+	    }
+	    if (order.getClientId() <= 0) {
+	        throw new IllegalArgumentException("Invalid client ID: " + order.getClientId());
+	    }
+	    for (OrderItem item : order.getItems()) {
+	        if (item.getProductId() <= 0 || item.getQuantity() <= 0 || item.getItemPrice() <= 0) {
+	            throw new IllegalArgumentException("Invalid order item: " + item);
+	        }
+	    }
+
+	    String insertOrderQuery = "INSERT INTO e_Orders (client_id, totalPrice, status) VALUES (?, ?, ?)";
+	    String insertOrderItemQuery = "INSERT INTO e_OrderItem (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)";
+
+	    try (Connection conn = DBConnect.getConnection()) {
+	        conn.setAutoCommit(false); // Start transaction
+	        conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE); // Optional
+
+	        try (PreparedStatement orderStmt = conn.prepareStatement(insertOrderQuery, Statement.RETURN_GENERATED_KEYS)) {
+	            // Insert order details
+	            orderStmt.setInt(1, order.getClientId());
+	            orderStmt.setDouble(2, order.getTotalAmount());
+	            orderStmt.setString(3, order.getStatus().name());
+	            int rowsAffected = orderStmt.executeUpdate();
+
+	            if (rowsAffected == 0) {
+	                throw new SQLException("Failed to create order, no rows affected.");
+	            }
+
+	            // Retrieve the generated order ID
+	            try (ResultSet generatedKeys = orderStmt.getGeneratedKeys()) {
+	                if (generatedKeys.next()) {
+	                    int orderId = generatedKeys.getInt(1);
+	                    order.setOrderId(orderId);
+
+	                    // Insert order items
+	                    try (PreparedStatement itemStmt = conn.prepareStatement(insertOrderItemQuery)) {
+	                        for (OrderItem item : order.getItems()) {
+	                            itemStmt.setInt(1, orderId);
+	                            itemStmt.setInt(2, item.getProductId());
+	                            itemStmt.setInt(3, item.getQuantity());
+	                            itemStmt.setDouble(4, item.getItemPrice());
+	                            itemStmt.addBatch();
+	                        }
+	                        itemStmt.executeBatch(); // Execute all item insertions
+	                    }
+	                } else {
+	                    throw new SQLException("Failed to retrieve generated order ID.");
+	                }
+	            }
+
+	            conn.commit(); // Commit the transaction
+	        } catch (SQLException e) {
+	            conn.rollback(); // Rollback on error
+	            e.printStackTrace();
+	            throw new SQLException("Error creating order and order items: " + e.getMessage(), e);
+	        }
+	    }
+	}
+
+
 
     private void addOrderItems(List<OrderItem> items, int orderId, Connection conn) throws SQLException {
         String query = "INSERT INTO e_OrderItem (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)";
@@ -123,6 +215,24 @@ public class OrderService {
         } catch (SQLException e) {
             e.printStackTrace();
             throw new SQLException("Error updating order status: " + e.getMessage(), e);
+        }
+    }
+    public void updateOrderTotalPrice(int orderId, double totalPrice) throws SQLException {
+        String query = "UPDATE e_Orders SET totalPrice = ? WHERE order_id = ?";
+
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setDouble(1, totalPrice);
+            stmt.setInt(2, orderId);
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected == 0) {
+                throw new SQLException("Failed to update total price, no rows affected.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new SQLException("Error updating total price: " + e.getMessage(), e);
         }
     }
 

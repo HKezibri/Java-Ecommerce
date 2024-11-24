@@ -55,20 +55,23 @@ public class LoginController {
             // Authenticate the user
             User authenticatedUser = authService.authenticate(username, password);
 
-            // Pass the authenticated user to the target controller
+            // Determine the FXML to load based on the user's role
             FXMLLoader loader;
+            String fxmlPath;
             if (authenticatedUser instanceof model.Admin) {
-                loader = new FXMLLoader(getClass().getResource("/view/AdminPage.fxml"));
+                fxmlPath = "/view/AdminPage.fxml";
             } else if (authenticatedUser instanceof model.Client) {
-                loader = new FXMLLoader(getClass().getResource("/view/ClientShoppingPage.fxml"));
+                fxmlPath = "/view/ClientShoppingPage.fxml";
             } else {
                 setError("Unrecognized user role.");
                 return;
             }
 
-            Parent root = loader.load();
+            // Load the FXML
+            loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent root = loader.load(); // Load FXML first before accessing the controller
 
-            // Pass the user to the target controller's setLoggedInUser method
+            // Get the controller and set the logged-in user
             Object controller = loader.getController();
             if (controller instanceof AdminPageController) {
                 ((AdminPageController) controller).setLoggedInUser(authenticatedUser);
@@ -84,11 +87,13 @@ public class LoginController {
 
         } catch (AuthentificationService.AuthenticationException e) {
             setError("Login failed: " + e.getMessage());
+        
         } catch (Exception e) {
             setError("An unexpected error occurred.");
             e.printStackTrace(); // Log detailed stack trace for debugging
         }
     }
+
 
     /**
      * Navigates to the registration page.

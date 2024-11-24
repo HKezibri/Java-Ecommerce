@@ -123,6 +123,23 @@ public class UserService {
         }
         throw new SQLException("Client not found.");
     }
+    public int getClientIdByUserId(int userId) throws SQLException {
+        String query = "SELECT client_id FROM e_Clients WHERE user_id = ?";
+
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("client_id"); // Return the client_id
+                } else {
+                    throw new SQLException("No client found for user_id: " + userId);
+                }
+            }
+        }
+    }
+
     
     //Retrieve all admins
     public List<Admin> getAllAdmins() throws SQLException {

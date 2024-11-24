@@ -4,6 +4,7 @@ module test {
     requires javafx.fxml;
     requires java.sql;
     requires javafx.base;
+	requires javafx.graphics;
 
      // Makes the `controller` package accessible to other modules.
     opens controller to javafx.fxml; // Allows reflection for FXML controllers.

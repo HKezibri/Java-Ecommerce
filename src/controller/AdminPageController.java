@@ -147,7 +147,7 @@ public class AdminPageController {
         loadStaffData();
        
     }
-
+//ORDERS
     private void initializeOrderTable() {
         OrderIDCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getOrderId()));
         orderClientIDCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getClientId()));

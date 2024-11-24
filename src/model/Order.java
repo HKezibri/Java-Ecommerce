@@ -29,6 +29,11 @@ public class Order {
         this.items = items != null ? items : new ArrayList<>();  // Ensure items list is not null
         this.totalAmount = calculateTotalAmount();
     }
+    public Order(int clientId, OrderStatus status) {
+        this.clientId = clientId;
+        this.status = status != null ? status : OrderStatus.in_progress; // Default status to Pending if null
+        this.totalAmount = calculateTotalAmount();
+    }
 
     // Getters and Setters
     public int getOrderId() {

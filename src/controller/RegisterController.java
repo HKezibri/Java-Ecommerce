@@ -15,40 +15,22 @@ import javafx.stage.Stage;
 import model.Client;
 import service.UserService;
 import util.Role;
-
+import util.UserInputValidator;
 import java.sql.SQLException;
+
 
 public class RegisterController {
 
-    @FXML
-    private TextField RegisterAddressField;
-
-    @FXML
-    private Button RegisterButton;
-
-    @FXML
-    private PasswordField RegisterConfirmField;
-
-    @FXML
-    private TextField RegisterEmailField;
-
-    @FXML
-    private VBox RegisterPage;
-
-    @FXML
-    private TextField RegisterPhoneField;
-
-    @FXML
-    private TextField RegisterUsernameField;
-
-    @FXML
-    private PasswordField RegisterpasswordField;
-
-    @FXML
-    private Hyperlink backToLogin;
-
-    @FXML
-    private Label errorLabel;
+    @FXML private TextField RegisterAddressField;
+    @FXML private Button RegisterButton;
+    @FXML private PasswordField RegisterConfirmField;
+    @FXML private TextField RegisterEmailField;
+    @FXML private VBox RegisterPage;
+    @FXML private TextField RegisterPhoneField;
+    @FXML private TextField RegisterUsernameField;
+    @FXML private PasswordField RegisterpasswordField;
+    @FXML private Hyperlink backToLogin;
+    @FXML private Label errorLabel;
 
     private final UserService userService = new UserService();
 
@@ -78,20 +60,13 @@ public class RegisterController {
             return;
         }
 
-        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            setError("Invalid email format.");
-            return;
-        }
-
-        if (!phone.matches("\\d+")) {
-            setError("Phone number must be numeric.");
-            return;
-        }
-
         try {
             // Create a new Client object
             Client newClient = new Client(username, password, email, phone, address);
             newClient.setRole(Role.client); // Explicitly set role as client
+
+            // Validate user input using UserInputValidator
+            UserInputValidator.validateUserInput(newClient);
 
             // Call UserService to create the user
             userService.createUser(newClient);
@@ -102,16 +77,21 @@ public class RegisterController {
             // Notify the user
             setSuccess("Registration successful. You can now log in.");
 
+        } catch (IllegalArgumentException e) {
+            // Handle validation errors
+            setError(e.getMessage());
         } catch (SQLException e) {
+            // Handle SQL exceptions
             setError("Failed to register: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+
     @FXML
     void handleBackToLogin(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/LoginPage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Login.fxml"));
             System.out.println("Loading FXML: /view/Login.fxml"); //
             Parent root = loader.load();
 

@@ -3,6 +3,8 @@ package controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.geometry.Pos; // For alignment settings in layouts like HBox and VBox
+import javafx.scene.text.Text; // For creating and styling text nodes
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -11,58 +13,69 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import model.Admin;
-import model.Order;
-import model.OrderItem;
-import model.Product;
-import model.User;
-import service.AuthentificationService;
-import service.OrderService;
-import service.ProductService;
+import model.*;
+import service.*;
 import util.OrderStatus;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class ClientShoppingController {
 
     @FXML private ImageView Img;
-    @FXML private Button addCartButton;
+    @FXML private Button addCartButton, removeBtn, checkoutBtn, clientLogout, clientAccount, SearchButton;
     @FXML private TableColumn<OrderItem, String> itemCol;
     @FXML private TableColumn<OrderItem, Integer> qtyCol;
-    @FXML private TableColumn<OrderItem, Double> costCol;
-    @FXML private TableColumn<OrderItem, Double> amountCol;
+    @FXML private TableColumn<OrderItem, Double> costCol, amountCol;
     @FXML private TableView<OrderItem> cartTable;
     @FXML private ChoiceBox<Product> productNameChoice;
-    @FXML private Label productPrice;
+    @FXML private Label productPrice, totalLabel;
     @FXML private Spinner<Integer> productQty;
-    @FXML private Label totalLabel;
-    @FXML private Button removeBtn;
-    @FXML private Button checkoutBtn;
-    @FXML private Button clientLogout;
-    @FXML private Button clientAccount;
+    @FXML private TextField SearchText;
+    @FXML private FlowPane flowPane;
+    
 
     private final ObservableList<OrderItem> orderItems = FXCollections.observableArrayList();
     private final ProductService productService = new ProductService();
     private final OrderService orderService = new OrderService();
-    private Order currentOrder;
+    private final UserService userservice = new UserService();
+    private int clientId; // Holds the retrieved client_id
+    private User loggedInUser;
+    
+    @FXML
+    public void setLoggedInUser(User user) {
+        this.loggedInUser = user;
+        clientAccount.setText(user.getUsername());
+        System.out.println("Login successful for: " + user.getUsername());
+
+        // Check if the logged-in user is a Client and fetch client-specific details
+        if (user instanceof Client) {
+            Client client = (Client) user;
+            if (client.getClientId() > 0) {
+                this.clientId = client.getClientId(); // Assign clientId to the class field
+                System.out.println("Client ID for logged-in user: " + this.clientId);
+            } else {
+                showError("Failed to retrieve client information. Please contact support.");
+            }
+        }
+    }
+
+
 
     @FXML
     public void initialize() {
         setupProductChoiceBox();
         setupTableView();
         setupSpinner();
-        initializeOrder();
         loadProductChoices();
+        loadProductCards();
     }
 
-    /**
-     * Sets up the Product ChoiceBox to display product names and handle selection events.
-     */
     private void setupProductChoiceBox() {
         productNameChoice.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
@@ -71,59 +84,21 @@ public class ClientShoppingController {
         });
     }
 
-    /**
-     * Configures the TableView columns for displaying cart items.
-     */
     private void setupTableView() {
-        // Unit price (cost) column - expects Double
-        costCol.setCellValueFactory(data -> 
-            new ReadOnlyObjectWrapper<>(data.getValue().getItemPrice())); // Use Double directly
-
-        // Total cost (amount = productPrice * quantity) column - expects Double
-        amountCol.setCellValueFactory(data -> 
-            new ReadOnlyObjectWrapper<>(data.getValue().TotalPrice())); // Use Double directly
-
-        // Item name column - expects String
-        itemCol.setCellValueFactory(data -> 
-            new ReadOnlyObjectWrapper<>(getProductNameById(data.getValue().getProductId())));
-
-        // Quantity column - expects Integer
-        qtyCol.setCellValueFactory(data -> 
-            new ReadOnlyObjectWrapper<>(data.getValue().getQuantity()));
-
-        // Set items for the TableView
+        itemCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(getProductNameById(data.getValue().getProductId())));
+        qtyCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getQuantity()));
+        costCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getItemPrice()));
+        amountCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().TotalPrice()));
         cartTable.setItems(orderItems);
-
-        // Add custom formatting for the cost and amount columns (optional)
         formatPriceColumns();
     }
 
-
-
-
-
-    /**
-     * Configures the quantity spinner for product selection.
-     */
     private void setupSpinner() {
         productQty.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1));
     }
+    
 
-    /**
-     * Initializes a new order for the client.
-     */
-    private void initializeOrder() {
-        try {
-            currentOrder = new Order(1, OrderStatus.in_progress, new ArrayList<>()); // Replace 1 with the actual client ID
-            orderService.createOrder(currentOrder);
-        } catch (SQLException e) {
-            showError("Error initializing order: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Loads products from the database into the ChoiceBox.
-     */
+    
     private void loadProductChoices() {
         try {
             List<Product> products = productService.getAllProducts();
@@ -133,185 +108,117 @@ public class ClientShoppingController {
         }
     }
 
-    /**
-     * Displays the details of the selected product, including price and image.
-     */
-    private void displayProductImage(Product product) {
-        if (product != null) {
-            productPrice.setText(String.format("$%.2f", product.getPrice()));
-
-            String imagePath = product.getPimage();
-            System.out.println("Image path: " + imagePath); // Debugging
-
-            try {
-                if (imagePath != null) {
-                    if (imagePath.startsWith("http") || imagePath.startsWith("https")) {
-                        // Load remote image
-                        System.out.println("Loading remote image: " + imagePath);
-                        Img.setImage(new Image(imagePath, true));
-                    } else {
-                        // Load local image
-                        System.out.println("Loading local image: " + imagePath);
-                        Img.setImage(new Image("file:" + imagePath, true));
-                    }
-                } else {
-                    throw new IllegalArgumentException("Image path is null or empty");
-                }
-            } catch (Exception e) {
-                System.err.println("Error loading image: " + e.getMessage());
-                Img.setImage(new Image("images/cream.png")); // Default fallback
+    private void loadProductCards() {
+        try {
+            List<Product> products = productService.getAllProducts();
+            flowPane.getChildren().clear();
+            for (Product product : products) {
+                VBox productCard = createProductCard(product);
+                flowPane.getChildren().add(productCard);
             }
-        }
-    }
-    @FXML
-    public void handleproductNameChoice(javafx.scene.input.MouseEvent event) {
-    	Product selectedProduct = productNameChoice.getSelectionModel().getSelectedItem();
-        if (selectedProduct != null) {
-            productPrice.setText(String.format("$%.2f", selectedProduct.getPrice()));
-            productQty.getValueFactory().setValue(1); // Reset quantity to 1
-        } else {
-            productPrice.setText(""); // Clear the price if no product is selected
-        }
-    }
-
-    @FXML
-    public void handImgChoice(javafx.scene.input.MouseEvent event) {
-        // Get the selected product from the ChoiceBox
-        Product selectedProduct = productNameChoice.getSelectionModel().getSelectedItem();
-
-        if (selectedProduct != null) {
-            // Display the product image and other details
-            displayProductImage(selectedProduct);
-        } else {
-            System.err.println("No product selected.");
-            Img.setImage(new Image("/images/placeholder.png")); // Fallback placeholder
-        }
-    }
-
-
-    /**
-     * Handles adding the selected product to the cart.
-     */
-    @FXML
-    void handleAddToCart(ActionEvent event) {
-        Product selectedProduct = productNameChoice.getSelectionModel().getSelectedItem();
-        int quantity = productQty.getValue();
-
-        if (selectedProduct == null || quantity <= 0) {
-            showError("Please select a valid product and quantity.");
-            return;
-        }
-
-        if (selectedProduct.getStockQuantity() < quantity) {
-            showError("Not enough stock available.");
-            return;
-        }
-
-        // Check if the product is already in the cart
-        OrderItem existingItem = orderItems.stream()
-                .filter(item -> item.getProductId() == selectedProduct.getIdProduct())
-                .findFirst()
-                .orElse(null);
-
-        if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + quantity);
-        } else {
-            orderItems.add(new OrderItem(
-                currentOrder.getOrderId(),
-                selectedProduct.getIdProduct(),
-                quantity,
-                selectedProduct.getPrice()
-            ));
-        }
-
-        try {
-            productService.updateProductStock(selectedProduct.getIdProduct(), -quantity);
-            updateTotalCost();
-            cartTable.refresh();
         } catch (SQLException e) {
-            showError("Failed to update cart: " + e.getMessage());
+            showError("Failed to load product cards: " + e.getMessage());
         }
     }
+   
 
-    /**
-     * Handles removing an item from the cart.
-     */
     @FXML
-    void handleRemoveButton(ActionEvent event) {
-        OrderItem selectedItem = cartTable.getSelectionModel().getSelectedItem();
+    private void handleSearch(ActionEvent event) {
+        String searchTerm = SearchText.getText().trim(); // Get text from the search field
 
-        if (selectedItem == null) {
-            showError("Please select an item to remove.");
-            return;
-        }
-
-        orderItems.remove(selectedItem);
-
-        try {
-            productService.updateProductStock(selectedItem.getProductId(), selectedItem.getQuantity());
-            updateTotalCost();
-            showInfo("Item removed from the cart.");
-        } catch (SQLException e) {
-            showError("Failed to remove product from cart: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Handles the checkout process.
-     */
-    @FXML
-    void handleCheckout(ActionEvent event) {
-        if (orderItems.isEmpty()) {
-            showError("Your cart is empty. Please add items before checking out.");
+        if (searchTerm.isEmpty()) {
+            loadProductCards(); // Reload all products if the search term is empty
             return;
         }
 
         try {
-            // Update order status to "validated"
-            orderService.updateOrderStatus(currentOrder.getOrderId(), OrderStatus.validated);
+            // Filter products based on the search term (case-insensitive search)
+            List<Product> filteredProducts = productService.getAllProducts().stream()
+                .filter(product -> product.getProductName().toLowerCase().contains(searchTerm.toLowerCase()) ||
+                                   product.getDescription().toLowerCase().contains(searchTerm.toLowerCase()))
+                .toList();
 
-            // Clear the cart and reset totals
-            orderItems.clear();
-            updateTotalCost();
-            cartTable.refresh(); // Refresh table to clear items
+            flowPane.getChildren().clear(); // Clear the existing product cards
 
-            // Reset ChoiceBox and quantity spinner
-            productNameChoice.getSelectionModel().clearSelection(); // Clear selected product
-            productQty.getValueFactory().setValue(1); // Reset quantity to 1
-            productPrice.setText(""); // Clear displayed price
-            // Remove any image from the ImageView
-            Img.setImage(null);
-
-            // Initialize a new order
-            initializeOrder();
-
-            showInfo("Checkout successful! Your order has been validated.");
+            if (filteredProducts.isEmpty()) {
+                // Show a "no results" message if no products match
+                Label noResultsLabel = new Label("No products match your search.");
+                noResultsLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: red;");
+                flowPane.getChildren().add(noResultsLabel);
+            } else {
+                // Display filtered products
+                for (Product product : filteredProducts) {
+                    VBox productCard = createProductCard(product);
+                    flowPane.getChildren().add(productCard);
+                }
+            }
         } catch (SQLException e) {
-            showError("Failed to complete checkout: " + e.getMessage());
+            showError("Failed to search products: " + e.getMessage());
         }
     }
 
 
 
+    private VBox createProductCard(Product product) {
+        // Create the product image
+        ImageView productImage = new ImageView();
+        String imagePath = product.getPimage();
+        try {
+            if (imagePath != null) {
+                productImage.setImage(new Image(imagePath.startsWith("http") ? imagePath : "file:" + imagePath, true));
+            } else {
+                productImage.setImage(new Image("/images/default.png"));
+            }
+        } catch (Exception e) {
+            productImage.setImage(new Image("/images/default.png"));
+        }
+        productImage.setFitWidth(200);
+        productImage.setFitHeight(150);
+        productImage.setPreserveRatio(true);
 
-    /**
-     * Updates the total cost of the cart.
-     */
-    private void updateTotalCost() {
-        double totalCost = orderItems.stream()
-                .mapToDouble(OrderItem::TotalPrice) // Sum of all total prices
-                .sum();
+        // Create the product name label
+        Label nameLabel = new Label(product.getProductName());
+        nameLabel.setPrefHeight(26);
+        nameLabel.setPrefWidth(147);
+        nameLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        // Update the total label
-        totalLabel.setText(String.format("Total: $%.2f", totalCost));
+        // Create the product price label
+        Label priceLabel = new Label(String.format("$%.2f", product.getPrice()));
+        priceLabel.setPrefHeight(18);
+        priceLabel.setPrefWidth(65);
+
+        // Wrap name and price in an HBox
+        HBox nameAndPriceBox = new HBox(30, nameLabel, priceLabel);
+        nameAndPriceBox.setAlignment(Pos.CENTER);
+
+        // Create the product description
+        Text productDesc = new Text(product.getDescription());
+        productDesc.setWrappingWidth(193); // Match the wrapping width from the FXML
+        productDesc.setStyle("-fx-font-size: 12px; -fx-fill: #333333;"); // Optional styling
+
+        // Create the VBox container
+        VBox productCard = new VBox(10, nameAndPriceBox, productImage, productDesc);
+        productCard.setAlignment(Pos.CENTER);
+        productCard.setPrefWidth(200);
+        productCard.setPrefHeight(300);
+        productCard.setSpacing(10);
+        productCard.setStyle("-fx-border-color: #cccccc; "
+                           + "-fx-border-radius: 10px; "
+                           + "-fx-background-color: #ffffff; "
+                           + "-fx-background-radius: 10px; "
+                           + "-fx-padding: 10px;");
+
+        // Add click event to the card
+        productCard.setOnMouseClicked(event -> {
+            productNameChoice.getSelectionModel().select(product);
+            displayProductImage(product);
+            productQty.getValueFactory().setValue(1);
+        });
+
+        return productCard;
     }
 
-    
 
-
-    /**
-     * Retrieves the product name by its ID.
-     */
     private String getProductNameById(int productId) {
         try {
             Product product = productService.getProductById(productId);
@@ -320,53 +227,128 @@ public class ClientShoppingController {
             return "Unknown Product";
         }
     }
-    
-    private void formatPriceColumns() {
-        // Format the cost column
-        costCol.setCellFactory(column -> new TableCell<OrderItem, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("$%.2f", item)); // Format as currency
-                }
-            }
-        });
 
-        // Format the amount column
-        amountCol.setCellFactory(column -> new TableCell<OrderItem, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("$%.2f", item)); // Format as currency
-                }
-            }
-        });
+    private void displayProductImage(Product product) {
+        try {
+            String imagePath = product.getPimage();
+            Img.setImage(new Image(imagePath.startsWith("http") ? imagePath : "file:" + imagePath, true));
+        } catch (Exception e) {
+            Img.setImage(new Image("/images/default.png"));
+        }
     }
-    private User loggedInUser; // Store the logged-in user
 
     @FXML
-    public void setLoggedInUser(User user) {
-        AuthentificationService authService = new AuthentificationService();
+    private void handleAddToCart(ActionEvent event) {
+        Product selectedProduct = productNameChoice.getSelectionModel().getSelectedItem();
+        int quantity = productQty.getValue();
 
-       
-            // Store the logged-in user
-            this.loggedInUser = user;
+        if (selectedProduct == null || quantity <= 0) {
+            showError("Invalid product selection or quantity.");
+            return;
+        }
 
-            // Personalize the button text with the user's full name and role
-            String userRole = loggedInUser instanceof Admin ? "Admin" : "Client";
-            clientAccount.setText(user.getUsername());
+        if (selectedProduct.getStockQuantity() < quantity) {
+            showError("Insufficient stock available.");
+            return;
+        }
 
-            // Optionally, perform further actions such as redirecting the user to another page
-            System.out.println("Login successful for: " + user.getUsername() + " (" + userRole + ")");
-       
+        // Update quantity if product exists in the cart
+        OrderItem existingItem = orderItems.stream()
+                .filter(item -> item.getProductId() == selectedProduct.getIdProduct())
+                .findFirst()
+                .orElse(null);
+
+        if (existingItem != null) {
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+        } else {
+            orderItems.add(new OrderItem(0, selectedProduct.getIdProduct(), quantity, selectedProduct.getPrice()));
+        }
+
+        cartTable.refresh(); // Ensure table updates
+        try {
+            productService.updateProductStock(selectedProduct.getIdProduct(), -quantity);
+            updateTotalCost();
+        } catch (SQLException e) {
+            showError("Failed to update stock: " + e.getMessage());
+        }
     }
-    
+
+    private void updateTotalCost() {
+        double total = orderItems.stream().mapToDouble(OrderItem::TotalPrice).sum();
+        totalLabel.setText(String.format("Total: $%.2f", total));
+    }
+
+    @FXML
+    private void handleRemoveButton(ActionEvent event) {
+        OrderItem selectedItem = cartTable.getSelectionModel().getSelectedItem();
+        if (selectedItem == null) {
+            showError("No item selected.");
+            return;
+        }
+
+        orderItems.remove(selectedItem);
+        cartTable.refresh();
+        try {
+            productService.updateProductStock(selectedItem.getProductId(), selectedItem.getQuantity());
+            updateTotalCost();
+        } catch (SQLException e) {
+            showError("Failed to update stock: " + e.getMessage());
+        }
+    }
+
+   /* @FXML
+    private void handleCheckout(ActionEvent event) {
+        if (orderItems.isEmpty()) {
+            showError("Cart is empty.");
+            return;
+        }
+
+        try {
+            // Calculate total cost
+            double totalCost = orderItems.stream().mapToDouble(OrderItem::TotalPrice).sum();
+
+            // Create a new order for the client
+            Order newOrder = new Order(clientId, OrderStatus.in_progress, new ArrayList<>(orderItems));
+            newOrder.setTotalAmount(totalCost); // Set the total amount
+            orderService.createOrder(newOrder); // Save the order to the database
+
+            // Clear the cart and reset UI
+            orderItems.clear();
+            cartTable.refresh();
+            updateTotalCost();
+            showInfo("Checkout completed successfully!");
+        } catch (SQLException e) {
+            showError("Checkout failed: " + e.getMessage());
+        }
+    }*/
+    @FXML
+    private void handleCheckout(ActionEvent event) {
+        if (orderItems.isEmpty()) {
+            showError("Cart is empty.");
+            return;
+        }
+
+        try {
+            double totalCost = orderItems.stream().mapToDouble(OrderItem::TotalPrice).sum();
+
+            // Create a new order for the client
+            Order newOrder = new Order(clientId, OrderStatus.in_progress, new ArrayList<>(orderItems));
+            newOrder.setTotalAmount(totalCost);
+
+            // Save the order to the database
+            orderService.createOrder(newOrder);
+
+            // Clear the cart and reset UI
+            orderItems.clear();
+            cartTable.refresh();
+            updateTotalCost();
+            showInfo("Checkout completed successfully!");
+        } catch (SQLException e) {
+            showError("Checkout failed: " + e.getMessage());
+        }
+    }
+
+
     @FXML
     public void handleLogout(ActionEvent event) {
         // Show confirmation alert
@@ -400,24 +382,33 @@ public class ClientShoppingController {
         }
     }
 
+    private void formatPriceColumns() {
+        costCol.setCellFactory(tc -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.format("$%.2f", item));
+            }
+        });
 
-    /**
-     * Displays an error alert with the specified message.
-     */
+        amountCol.setCellFactory(tc -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.format("$%.2f", item));
+            }
+        });
+    }
+
     private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setContentText(message);
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
         alert.showAndWait();
     }
 
-    /**
-     * Displays an information alert with the specified message.
-     */
     private void showInfo(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Information");
-        alert.setContentText(message);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
         alert.showAndWait();
     }
 }
+
+    
