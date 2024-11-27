@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 import model.Invoice;
 import model.OrderItem;
-import model.Product;
+//import model.Product;
 import mySQLdb.DBConnect;
 
 public class InvoiceService {
@@ -64,7 +64,7 @@ public class InvoiceService {
 
 
     // Fetch product details by product ID
-    private Product getProductById(int productId, Connection conn) throws SQLException {
+   /* private Product getProductById(int productId, Connection conn) throws SQLException {
         String query = "SELECT * FROM e_Product WHERE product_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setInt(1, productId);
@@ -87,7 +87,7 @@ public class InvoiceService {
                 throw new SQLException("Product not found with ID: " + productId);
             }
         }
-    }
+    }*/
     
     // Update an existing invoice's total in case of order modification
     public void updateInvoice(int orderId, double newTotalPrice) throws SQLException {

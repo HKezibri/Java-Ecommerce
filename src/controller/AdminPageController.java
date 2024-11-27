@@ -35,20 +35,17 @@ import util.UserInputValidator;
 import service.OrderService;
 import service.UserService;
 import service.ProductService;
-import service.UserService;
 import service.SearchService;
-import service.AuthentificationService;
+//import service.AuthentificationService;
 
 
 import java.sql.SQLException;
 import java.util.List;
-import java.io.File;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import java.io.IOException;
 
 public class AdminPageController {
 
@@ -107,6 +104,7 @@ public class AdminPageController {
     @FXML private TextField productStockText;
     @FXML private TextField productPriceText;
     @FXML private TextField imgPath;
+    @FXML private ImageView productImageView;
     
     // Staff Tab
     @FXML private Tab staffTab;
@@ -129,7 +127,7 @@ public class AdminPageController {
     private final UserService userService = new UserService();
     private final ProductService productService = new ProductService();
     private final SearchService searchService = new SearchService();
-    private final AuthentificationService  authService = new AuthentificationService(); 
+    //private final AuthentificationService  authService = new AuthentificationService(); 
     private final ObservableList<Product> products = FXCollections.observableArrayList();
 
     
@@ -307,18 +305,18 @@ public class AdminPageController {
     private void loadProductData() {
         try {
             // Fetch all products using the ProductService
-            ProductService productService = new ProductService();
-            List<Product> products = productService.getAllProducts();
+            List<Product> fetchedProducts = productService.getAllProducts();
 
-            // Convert the list of products to an observable list
-            ObservableList<Product> productList = FXCollections.observableArrayList(products);
+            // Clear and add the new products to the existing ObservableList
+            products.clear();
+            products.addAll(fetchedProducts);
 
-            // Set the items in the TableView
-            productTableView.setItems(productList);
+            // No need to set the items again as the list is already bound
         } catch (SQLException e) {
             showError("Failed to load products: " + e.getMessage());
         }
     }
+
 
 ///////////////////////////////////////CRUD//////////////////////////////////////////////
     //********************************************ORDERS*****************************************************
@@ -710,7 +708,7 @@ public class AdminPageController {
 
 
     //********************************************PRODUCT*****************************************************
-    private Product currentProduct; // Represents the product being edited or added
+    //private Product currentProduct; // Represents the product being edited or added
     @FXML
     void handleProductDelButton(ActionEvent event) {
         // Get the selected product from the TableView
@@ -747,56 +745,40 @@ public class AdminPageController {
     }
     @FXML
     void handleProductAddButton(ActionEvent event) {
-        // Retrieve input from the text fields
         String name = productNameText.getText().trim();
         String description = productDescripText.getText().trim();
         String stock = productStockText.getText().trim();
         String price = productPriceText.getText().trim();
-        String imagePath = imgPath.getText().trim(); // Retrieve image path from TextField
+        String imagePath = imgPath.getText().trim();
 
         try {
-            // Validate inputs
             if (name.isEmpty() || description.isEmpty() || stock.isEmpty() || price.isEmpty()) {
                 throw new IllegalArgumentException("All fields are required.");
             }
-
             if (!stock.matches("\\d+")) {
                 throw new IllegalArgumentException("Stock must be a valid positive integer.");
             }
-
             if (!price.matches("\\d+(\\.\\d{1,2})?")) {
                 throw new IllegalArgumentException("Price must be a valid number with up to two decimal places.");
             }
-         // Check if an image has been set in the ImageView
-            //if (productImageView.getImage() != null) {
-            	//imagePath = productImageView.getImage();
-                
-           // }
 
-            // Create a new Product object
             Product newProduct = new Product();
             newProduct.setName(name);
             newProduct.setDescription(description);
             newProduct.setStockQuantity(Integer.parseInt(stock));
             newProduct.setPrice(Double.parseDouble(price));
-            newProduct.setPimage(imagePath); 
             newProduct.setPimage(imagePath);
+
+            productService.addProduct(newProduct); // Add product to database
+
+           
+                products.add(newProduct); // Add to ObservableList
+                productTableView.refresh(); // Refresh TableView
+                System.out.println("Product added to ObservableList. Total products: " + products.size());
             
-            // Add the product to the database
-            ProductService productService = new ProductService();
-            productService.addProduct(newProduct);
 
-          
-            // Show success message
             showInfo("Product added successfully.");
-            // Add the new product directly to the ObservableList (assuming you have an ObservableList backing the TableView)
-            products.add(newProduct); // Add to the ObservableList
-            // Refresh the TableView (if needed)
-            productTableView.refresh();
-
-            // Clear input fields
             clearProductForm();
-
 
         } catch (IllegalArgumentException e) {
             showError(e.getMessage());
@@ -804,70 +786,8 @@ public class AdminPageController {
             showError("Failed to add product: " + e.getMessage());
         }
     }
-    //Not used after the cleaning
-    /**
-     * Saves the updated image to the appropriate location and returns the path.
-     * 
-     * @param product The product being updated.
-     * @param image   The image to be saved.
-     * @return The relative path to the saved image, or null if the saving fails.
-     */
-    private String saveImageToDatabase(String productName, Image image) {
-        try {
-            File destinationFolder = new File("images");
-            if (!destinationFolder.exists()) destinationFolder.mkdir();// change this
 
-            // Use product name as part of the image filename to avoid conflicts
-            String imageFileName = "product_" + productName + ".png";
-            File destinationFile = new File(destinationFolder, imageFileName);
-
-            // Convert JavaFX Image to file and save it
-            if (destinationFile.exists()) {
-                destinationFile.delete(); // Overwrite existing image
-            }
-
-            // Save the image and return the path
-            return destinationFile.toURI().toString();
-        } catch (Exception e) {
-            showError("Failed to save product image: " + e.getMessage());
-            return null;
-        }
-    }
-
-
-    /*private void populateProductForm(Product product) {
-    	if (product == null) {
-            // Clear the form fields if no client is selected
-        	clearProductForm();
-        }
-        productNameText.setText(product.getProductName());
-        productDescripText.setText(product.getDescription());
-        productStockText.setText(String.valueOf(product.getStockQuantity()));
-        productPriceText.setText(String.valueOf(product.getPrice()));
-
-        // Set the image in the ImageView if available
-        if (product.getPimage() != null && !product.getPimage().isBlank()) {
-            try {
-                Image productImage;
-                if (product.getPimage().startsWith("http")) {
-                    productImage = new Image(product.getPimage());
-                } else {
-                    File imageFile = new File(product.getPimage());
-                    if (imageFile.exists()) {
-                        productImage = new Image(imageFile.toURI().toString());
-                    } else {
-                        productImage = new Image("default.png"); // Placeholder for missing images
-                    }
-                }
-                productImageView.setImage(productImage);
-            } catch (Exception e) {
-            	showError("Error loading product image: " + e.getMessage());
-                productImageView.setImage(new Image("default.png")); // Fallback image
-            }
-        } else {
-            productImageView.setImage(null); // Clear the ImageView if no image is available
-        }
-    }*/
+  
     /**
      * Populates the product form with the details of the selected product.
      */
@@ -977,157 +897,7 @@ public class AdminPageController {
         }
     }
     
-    //never used after the cleaning of the code
-    private void onProductSelected(Product selectedProduct) {
-        currentProduct = selectedProduct; // Assign the selected product
-    }
-    private void refreshProductTable() {
-        try {
-            List<Product> products = productService.getAllProducts(); // Fetch updated product list
-            productTableView.setItems(FXCollections.observableArrayList(products)); // Update TableView
-        } catch (SQLException e) {
-            showError("Error loading products: " + e.getMessage());
-        }
-    }
 
-
-    @FXML
-    private ImageView productImageView;
-    //never used after the cleaning of the code
-    private void updateProductImage(String imagePath) {
-        try {
-            if (currentProduct != null) {
-                currentProduct.setPimage(imagePath);
-                productService.updateProduct(currentProduct);
-                refreshProductTable();
-                showInfo("Image successfully updated.");
-            } else {
-                showError("No product selected. Please select or create a product first.");
-            }
-        } catch (SQLException e) {
-             showError("Updating Product Image" + e.getMessage());
-
-        }
-    }
-
-   /* @FXML
-    public void handleProductImageButton(ActionEvent event) {
-        TextInputDialog inputDialog = new TextInputDialog();
-        inputDialog.setTitle("Add Product Image");
-        inputDialog.setHeaderText("Enter an HTTPS URL or select a local file");
-        inputDialog.setContentText("Enter URL (or leave blank to select file):");
-
-        String imageUrl = inputDialog.showAndWait().orElse("");
-        if (!imageUrl.isEmpty()) {
-            if (imageUrl.startsWith("http")) {
-            	productImageView.setImage(imageUrl);
-            } else {
-                showError("Invalid URL. Please provide a valid HTTPS URL.");
-            }
-        } else {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg"));
-            File selectedFile = fileChooser.showOpenDialog(productImageView.getScene().getWindow());
-
-            if (selectedFile != null) {
-                try {
-                    File destinationFolder = new File("images");
-                    if (!destinationFolder.exists()) destinationFolder.mkdir();
-
-                    File destinationFile = new File(destinationFolder, selectedFile.getName());
-                    Files.copy(selectedFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-                    updateProductImage("images/" + selectedFile.getName());
-                } catch (IOException e) {
-                    handleException("Saving Image", e);
-                }
-            } else {
-                showError("No file selected.");
-            }
-        }
-    }*/
-
-/*
-    @FXML
-    public void handleProductImageButton(ActionEvent event) {
-        TextInputDialog inputDialog = new TextInputDialog();
-        inputDialog.setTitle("Add Product Image");
-        inputDialog.setHeaderText("Enter an HTTPS URL or select a local file");
-        inputDialog.setContentText("Enter URL (or leave blank to select file):");
-
-        String imageUrl = inputDialog.showAndWait().orElse("");
-
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            // User provided a URL
-            if (imageUrl.startsWith("http") || imageUrl.startsWith("https")) {
-                try {
-                    // Load the remote image
-                    Image remoteImage = new Image(imageUrl, true);
-
-                    if (remoteImage.isError()) {
-                        showError("Failed to load the image from the provided URL.");
-                        return;
-                    }
-
-                    // Update the ImageView
-                    productImageView.setImage(remoteImage);
-
-                    // Save the HTTPS URL directly in the database
-                    if (currentProduct != null) {
-                        currentProduct.setPimage(imageUrl); // Save HTTPS URL
-                        productService.updateProduct(currentProduct); // Update in the database
-                        refreshProductTable(); // Refresh the table to display updated data
-                    } else {
-                        showError("No product selected. Please select or create a product first.");
-                    }
-
-                    showInfo("Image successfully imported from URL.");
-                } catch (Exception e) {
-                    showError("Error loading image from URL: " + e.getMessage());
-                }
-            } else {
-                showError("Invalid URL. Please provide a valid HTTPS URL.");
-            }
-        } else {
-            // User wants to select a local file
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg"));
-
-            File selectedFile = fileChooser.showOpenDialog(productImageView.getScene().getWindow());
-
-            if (selectedFile != null) {
-                try {
-                    File destinationFolder = new File("images");
-                    if (!destinationFolder.exists()) destinationFolder.mkdir();
-
-                    File destinationFile = new File(destinationFolder, selectedFile.getName());
-                    Files.copy(selectedFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-                    // Update the ImageView
-                    Image importedImage = new Image(destinationFile.toURI().toString());
-                    productImageView.setImage(importedImage);
-
-                    // Save the relative path in the product object
-                    if (currentProduct != null) {
-                        currentProduct.setPimage("images/" + selectedFile.getName()); // Save this in DB
-                        productService.updateProduct(currentProduct); // Save changes in the database
-                        refreshProductTable(); // Refresh the table to display updated data
-                    } else {
-                        showError("No product selected. Please select or create a product first.");
-                    }
-
-                    showInfo("Image successfully imported.");
-                } catch (IOException e) {
-                    showError("Error saving image: " + e.getMessage());
-                } catch (SQLException e) {
-                    showError("Error updating product: " + e.getMessage());
-                }
-            } else {
-                showError("No file selected.");
-            }
-        }
-        
-    }*/
     /**
      * Handles the image import button.
      */
@@ -1217,95 +987,99 @@ public class AdminPageController {
     /**
      * Handles search functionality across clients, products, or orders based on user input.
      */
+  
     @FXML
     private void onSearch() {
-        // Retrieve the search query from the text field
         String searchQuery = SearchText.getText().trim();
 
-        // Check if the search query is empty
         if (searchQuery.isEmpty()) {
             searchResult.setText("Please enter a search term.");
             return;
         }
 
         try {
-            // Search clients
-            List<Client> matchingClients = searchService.searchUserByUsername(searchQuery).stream()
-                .filter(user -> user instanceof Client)
-                .map(user -> (Client) user)
-                .toList();
+            // Search for clients by user name
+            List<Client> clients = searchService.searchUserByUsername(searchQuery).stream()
+                    .filter(user -> user instanceof Client)
+                    .map(user -> (Client) user)
+                    .toList();
 
-            if (!matchingClients.isEmpty()) {
-                StringBuilder resultText = new StringBuilder("Clients Found:\n");
-                for (Client client : matchingClients) {
+            // Search for products by name
+            List<Product> products = searchService.searchProductsByName(searchQuery);
+
+            // Search for orders by user name or status
+            List<Order> orders = searchService.searchOrders(searchQuery, searchQuery);
+
+            // Check results and display them accordingly
+            StringBuilder resultText = new StringBuilder();
+
+            // Display Clients and their Orders
+            if (!clients.isEmpty()) {
+                resultText.append("Clients Found:\n");
+                for (Client client : clients) {
+                    // Format client information
                     resultText.append(formatClientInfo(client)).append("\n");
+
+                    // Retrieve and format orders for this client
+                    List<Order> clientOrders = searchService.searchOrdersByClientId(client.getUserId());
+                    if (!clientOrders.isEmpty()) {
+                        resultText.append("Orders for ").append(client.getUsername()).append(":\n")
+                                  .append(clientOrders.stream()
+                                          .map(this::formatOrderInfo)
+                                          .reduce((a, b) -> a + "\n" + b)
+                                          .orElse(""))
+                                  .append("\n");
+                    } else {
+                        resultText.append("No orders found for ").append(client.getUsername()).append(".\n");
+                    }
+
+                    resultText.append("\n"); // Add some space between clients
                 }
-                searchResult.setText(resultText.toString());
-                return;
             }
 
-            // Search products
-            List<Product> matchingProducts = searchService.searchProductsByName(searchQuery);
-            if (!matchingProducts.isEmpty()) {
-                StringBuilder resultText = new StringBuilder("Products Found:\n");
-                for (Product product : matchingProducts) {
-                    resultText.append(formatProductInfo(product)).append("\n");
-                }
-                searchResult.setText(resultText.toString());
-                return;
+            // Display Products
+            if (!products.isEmpty()) {
+                resultText.append("Products Found:\n")
+                        .append(products.stream()
+                                .map(this::formatProductInfo)
+                                .reduce((a, b) -> a + "\n" + b)
+                                .orElse(""))
+                        .append("\n\n");
             }
 
-            // Search orders dynamically for a specific client
-            searchOrders(searchQuery); // Reuse the optimized `searchOrders` method
+            // Display Orders
+            if (!orders.isEmpty()) {
+                resultText.append("Orders Found:\n")
+                        .append(orders.stream()
+                                .map(this::formatOrderInfo)
+                                .reduce((a, b) -> a + "\n" + b)
+                                .orElse(""));
+            }
 
-            // No matches found
-            searchResult.setText("No results found for the query: " + searchQuery);
-
-        } catch (SQLException e) {
-            searchResult.setText("Error during search: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    //  Search Orders Function
-    private void searchOrders(String searchQuery) {
-        // Check if the search query is empty
-        if (searchQuery.isEmpty()) {
-            searchResult.setText("Please enter a value to search.");
-            return;
-        }
-
-        try {
-            // Call the search service using the username (searchQuery)
-            List<Order> matchingOrders = searchService.searchOrders(searchQuery, searchQuery);
-
-            if (!matchingOrders.isEmpty()) {
-                // Build and display results
-                String resultText = matchingOrders.stream()
-                        .map(this::formatOrderInfo)
-                        .reduce((a, b) -> a + "\n" + b)
-                        .orElse(""); // Reduce results into a single formatted string
-                searchResult.setText("Orders Found:\n" + resultText);
+            // Display "No results found" if nothing matches
+            if (resultText.length() == 0) {
+                searchResult.setText("No results found for: " + searchQuery);
             } else {
-                searchResult.setText("No orders found matching the search criteria.");
+                searchResult.setText(resultText.toString().trim());
             }
         } catch (SQLException e) {
-            searchResult.setText("Error searching orders: " + e.getMessage());
-            e.printStackTrace();
+            searchResult.setText("Search failed: " + e.getMessage());
         }
     }
 
-    
+   
 
     //********************************************LOGIN********************************************
     private User loggedInUser; // Store the logged-in user
-
-    @FXML
+    
+    //@SuppressWarnings("unused")
+    //@FXML
     public void setLoggedInUser(User user) {
         //AuthentificationService authService = new AuthentificationService();
 
        
             // Store the logged-in user
-            this.loggedInUser = user;
+            //this.loggedInUser = user;
 
             // Personalize the button text with the user's full name and role
             String userRole = loggedInUser instanceof Admin ? "Admin" : "Client";
@@ -1315,7 +1089,8 @@ public class AdminPageController {
             System.out.println("Login successful for: " + user.getUsername() + " (" + userRole + ")");
        
     }
-
+    
+   
     
     //********************************************LOGOUT********************************************
     @FXML
@@ -1324,7 +1099,7 @@ public class AdminPageController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Logout Confirmation");
         alert.setHeaderText("Are you sure you want to log out?");
-        alert.setContentText("You will be redirected to the login page.");
+        alert.setContentText("You will be redirected to the welcome page.");
         
         // Wait for user response
         Optional<ButtonType> result = alert.showAndWait();
@@ -1333,17 +1108,19 @@ public class AdminPageController {
             
             // Load the login page
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/Login.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/WelcomePage.fxml"));
                 Parent loginPage = loader.load();
 
                 // Get the current stage and set the login scene
                 Stage stage = (Stage) adminLogout.getScene().getWindow();
                 Scene scene = new Scene(loginPage);
                 stage.setScene(scene);
-                stage.setTitle("Login Page");
+                stage.setTitle("Welcome Page");
+                stage.centerOnScreen();
+                stage.setResizable(false);
                 stage.show();
             } catch (IOException e) {
-                showError("Failed to load the login page: " + e.getMessage());
+                showError("Failed to load the page: " + e.getMessage());
             }
         } else {
             // User cancelled logout
@@ -1363,9 +1140,16 @@ public class AdminPageController {
      * @return A formatted string with client details.
      */
     private String formatClientInfo(Client client) {
-        return "ID: " + client.getClientId() + ", Name: " + client.getUsername() +
-               ", Email: " + client.getEmail() + ", Phone: " + client.getPhone() +
-               ", Address: " + client.getAddress();
+        if (client == null) {
+            return "Client information not available.";
+        }
+        StringBuilder clientInfo = new StringBuilder();
+        clientInfo.append("Full Name: ").append(client.getUsername() != null ? client.getUsername() : "N/A")
+                  .append(", Email: ").append(client.getEmail() != null && !client.getEmail().isEmpty() ? client.getEmail() : "N/A")
+                  .append(", Phone: ").append(client.getPhone() != null && !client.getPhone().isEmpty() ? client.getPhone() : "N/A")
+                  .append(", Address: ").append(client.getAddress() != null && !client.getAddress().isEmpty() ? client.getAddress() : "N/A");
+
+        return clientInfo.toString();
     }
 
     /**
@@ -1390,25 +1174,23 @@ public class AdminPageController {
         return "Order ID: " + order.getOrderId() + ", Client ID: " + order.getClientId() +
                ", Status: " + order.getStatus();
     }
+    
 
  
      
     private void showError(String message) {
-    	Platform.runLater(() -> {
-	        Alert alert = new Alert(Alert.AlertType.ERROR);
-	        alert.setTitle("Error");
-	        alert.setContentText(message);
-	        alert.showAndWait();
-    	});
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setContentText(message);
+        alert.showAndWait();
+    	
     }
 
     private void showInfo(String message) {
-    	Platform.runLater(() -> {
 	        Alert alert = new Alert(Alert.AlertType.INFORMATION);
 	        alert.setTitle("Information");
 	        alert.setContentText(message);
 	        alert.showAndWait();
-    	});
     }
    
 

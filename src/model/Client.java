@@ -10,13 +10,13 @@ public class Client extends User {
     private String address;
  // private Date add_date private Date update_date
 
-    public Client(String username, String password, String email, String phone, String address) {
+    public Client(String username, String email, String phone, String address, String password) {
         super(username,password, Role.client); // Set role using Role enum
         this.email = email;
         this.phone = phone;
         this.address = address;
     }
-    public Client(int clientId, String username, String password, String email, String phone, String address) {
+    public Client(int clientId, String username, String email, String phone, String address, String password) {
         super(username,password, Role.client); // Set role using Role enum
         this.clientId = clientId;
         this.email = email;
@@ -24,7 +24,7 @@ public class Client extends User {
         this.address = address;
     }
  // Constructor to initialize all attributes
-    public Client(int clientId, int userId, String username, String password, String email, String phone, String address) {
+    public Client(int clientId, int userId, String username, String email, String phone, String address, String password) {
         super(userId, username, password, Role.client); // Call the User constructor
         this.clientId = clientId;
         this.email = email;
@@ -34,8 +34,10 @@ public class Client extends User {
 
     // Getters and setters
     public int getClientId() {return clientId;}
+    
     public String getEmail() { return email; }
     public String getPhone() { return phone; }
+    
     public String getAddress() { return address; }
     
     public void setClientId(int clientId) {  this.clientId = clientId;  }

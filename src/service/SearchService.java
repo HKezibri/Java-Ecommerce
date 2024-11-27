@@ -42,22 +42,38 @@ public class SearchService {
         return products;
     }
 
-    // Search for orders by client username and/or status
+    // Enhanced Search for orders by client username and/or status
     public List<Order> searchOrders(String clientUsername, String status) throws SQLException {
-    	List<Order> orders = new ArrayList<>();
-        String query = """
+        List<Order> orders = new ArrayList<>();
+        StringBuilder queryBuilder = new StringBuilder("""
             SELECT o.*, u.username AS client_username
             FROM e_Orders o
             JOIN e_Clients c ON o.client_id = c.client_id
             JOIN e_Users u ON c.user_id = u.user_id
-            WHERE u.username LIKE ? AND o.status LIKE ?
-        """;
+            WHERE 1=1
+        """);
+
+        // Adding conditions to the query based on search parameters
+        List<String> parameters = new ArrayList<>();
+        if (clientUsername != null && !clientUsername.isEmpty()) {
+            queryBuilder.append(" AND u.username LIKE ?");
+            parameters.add("%" + clientUsername + "%");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            queryBuilder.append(" AND o.status LIKE ?");
+            parameters.add("%" + status + "%");
+        }
+
+        String query = queryBuilder.toString();
 
         try (Connection conn = DBConnect.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            stmt.setString(1, "%" + clientUsername + "%");
-            stmt.setString(2, "%" + status + "%");
+            // Set parameters dynamically
+            for (int i = 0; i < parameters.size(); i++) {
+                stmt.setString(i + 1, parameters.get(i));
+            }
 
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -84,7 +100,7 @@ public class SearchService {
     }
 
 
-    // Search for users by userLastname
+    // Search for users by user username
     public List<User> searchUserByUsername(String keyword) throws SQLException {
         List<User> users = new ArrayList<>();
         String query = """
@@ -119,8 +135,6 @@ public class SearchService {
                                 rs.getString("phone"),
                                 rs.getString("address"),
                                 rs.getString("password")
-                                
-   
                         );
                         break;
                     default:
@@ -134,4 +148,32 @@ public class SearchService {
         }
         return users;
     }
+    public List<Order> searchOrdersByClientId(int clientId) throws SQLException {
+        List<Order> orders = new ArrayList<>();
+        String query = """
+                SELECT * FROM e_Orders
+                WHERE client_id = ?
+            """;
+
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setInt(1, clientId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Order order = new Order(
+                    rs.getInt("order_id"),
+                    rs.getInt("client_id"),
+                    OrderStatus.valueOf(rs.getString("status"))
+                );
+                orders.add(order);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new SQLException("Error searching for orders: " + e.getMessage(), e);
+        }
+        return orders;
+    }
+
 }

@@ -123,6 +123,8 @@ public class UserService {
         }
         throw new SQLException("Client not found.");
     }
+
+
     public int getClientIdByUserId(int userId) throws SQLException {
         String query = "SELECT client_id FROM e_Clients WHERE user_id = ?";
 

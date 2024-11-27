@@ -15,7 +15,7 @@ public class Order {
     private double totalAmount;
  // private Date update_date
 
-    // Constructor with calculation for total amount based on order items
+    // Constructors
     public Order(int clientId, OrderStatus status, List<OrderItem> items) {
         this.clientId = clientId;
         this.status = status != null ? status : OrderStatus.in_progress; // Default status to Pending if null
@@ -29,11 +29,13 @@ public class Order {
         this.items = items != null ? items : new ArrayList<>();  // Ensure items list is not null
         this.totalAmount = calculateTotalAmount();
     }
-    public Order(int clientId, OrderStatus status) {
+    public Order(int order_id, int clientId, OrderStatus status) {
+    	this.orderId = order_id;
         this.clientId = clientId;
         this.status = status != null ? status : OrderStatus.in_progress; // Default status to Pending if null
         this.totalAmount = calculateTotalAmount();
     }
+    
 
     // Getters and Setters
     public int getOrderId() {

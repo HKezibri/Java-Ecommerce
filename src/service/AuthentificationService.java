@@ -80,16 +80,18 @@ public class AuthentificationService {
 	}
 
 
-    /**
-     * Custom exception for authentication errors.
-     */
-    public static class AuthenticationException extends Exception {
-        public AuthenticationException(String message) {
-            super(message);
-        }
+	/**
+	 * Custom exception for authentication errors.
+	 */
+	public static class AuthenticationException extends Exception {
+	    private static final long serialVersionUID = 1L; // Explicit serialVersionUID
 
-        public AuthenticationException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
+	    public AuthenticationException(String message) {
+	        super(message);
+	    }
+
+	    public AuthenticationException(String message, Throwable cause) {
+	        super(message, cause);
+	    }
+	}
 }

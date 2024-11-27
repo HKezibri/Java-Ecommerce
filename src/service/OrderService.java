@@ -10,60 +10,6 @@ import util.OrderStatus;
 
 public class OrderService {
 
-    /*public void createOrder(Order order) throws SQLException {
-        String query = "INSERT INTO e_Orders (client_id, totalPrice, status) VALUES (?, ?, ?)";
-
-        try (Connection conn = DBConnect.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-
-            stmt.setInt(1, order.getClientId());
-            stmt.setDouble(2, order.getTotalAmount());
-            stmt.setString(3, order.getStatus().name());
-
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new SQLException("Failed to create order, no rows affected.");
-            }
-
-            ResultSet generatedKeys = stmt.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                int orderId = generatedKeys.getInt(1);
-                order.setOrderId(orderId);
-                addOrderItems(order.getItems(), orderId, conn);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new SQLException("Error creating order: " + e.getMessage(), e);
-        }
-    }
-	public void createOrder(Order order) throws SQLException {
-	    String query = "INSERT INTO e_Orders (client_id, totalPrice, status) VALUES (?, ?, ?)";
-
-	    try (Connection conn = DBConnect.getConnection();
-	         PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-
-	        // Use client_id from the Order object
-	        stmt.setInt(1, order.getClientId()); 
-	        stmt.setDouble(2, order.getTotalAmount());
-	        stmt.setString(3, order.getStatus().name());
-
-	        int rowsAffected = stmt.executeUpdate();
-	        if (rowsAffected == 0) {
-	            throw new SQLException("Failed to create order, no rows affected.");
-	        }
-
-	        ResultSet generatedKeys = stmt.getGeneratedKeys();
-	        if (generatedKeys.next()) {
-	            int orderId = generatedKeys.getInt(1);
-	            order.setOrderId(orderId);
-	            System.out.println("Order created with order_id: " + orderId);
-	            addOrderItems(order.getItems(), orderId, conn);
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        throw new SQLException("Error creating order: " + e.getMessage(), e);
-	    }
-	}*/
 	public void createOrder(Order order) throws SQLException {
 	    // Validate order and items
 	    if (order.getItems() == null || order.getItems().isEmpty()) {
@@ -129,7 +75,7 @@ public class OrderService {
 
 
 
-    private void addOrderItems(List<OrderItem> items, int orderId, Connection conn) throws SQLException {
+    /*private void addOrderItems(List<OrderItem> items, int orderId, Connection conn) throws SQLException {
         String query = "INSERT INTO e_OrderItem (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -144,7 +90,7 @@ public class OrderService {
             e.printStackTrace();
             throw new SQLException("Error adding order items: " + e.getMessage(), e);
         }
-    }
+    }*/
 
     public List<Order> getOrdersByClientId(int clientId) throws SQLException {
         List<Order> orders = new ArrayList<>();
